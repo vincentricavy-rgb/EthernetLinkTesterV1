@@ -24,9 +24,9 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Name: "desktopicon"; Description: "Créer un raccourci sur le Bureau"; GroupDescription: "Raccourcis"
 Name: "firewall"; Description: "Autoriser TCP/UDP 5201 dans le pare-feu Windows"; GroupDescription: "Réseau"; Flags: checkedonce
 [Run]
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=\"Ethernet Link Tester TCP\" dir=in action=allow protocol=TCP localport=5201"; Flags: runhidden; Tasks: firewall
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=\"Ethernet Link Tester UDP\" dir=in action=allow protocol=UDP localport=5201"; Flags: runhidden; Tasks: firewall
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Ethernet Link Tester TCP"" dir=in action=allow protocol=TCP localport=5201"; Flags: runhidden; Tasks: firewall
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""Ethernet Link Tester UDP"" dir=in action=allow protocol=UDP localport=5201"; Flags: runhidden; Tasks: firewall
 Filename: "{app}\{#MyAppExeName}"; Description: "Lancer {#MyAppName}"; Flags: nowait postinstall skipifsilent
 [UninstallRun]
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=\"Ethernet Link Tester TCP\""; Flags: runhidden
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=\"Ethernet Link Tester UDP\""; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Ethernet Link Tester TCP"""; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""Ethernet Link Tester UDP"""; Flags: runhidden
