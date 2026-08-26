@@ -1,0 +1,67 @@
+name: Build Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore .\EthernetLinkTester.sln
+
+      - name: Publish self-contained Windows x64
+        shell: pwsh
+        run: |
+          dotnet publish .\src\EthernetLinkTester\EthernetLinkTester.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o .\publish\win-x64
+
+      - name: Build portable ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force .\dist | Out-Null
+          Compress-Archive -Path .\publish\win-x64\* -DestinationPath .\dist\EthernetLinkTester-Portable-Windows11-x64.zip -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe introuvable: $iscc" }
+          & $iscc .\installer\EthernetLinkTester.iss
+
+      - name: Collect EXE
+        shell: pwsh
+        run: |
+          Copy-Item .\publish\win-x64\EthernetLinkTester.exe .\dist\EthernetLinkTester-Windows11-x64.exe -Force
+          Get-ChildItem .\dist
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: EthernetLinkTester-Windows11-x64
+          path: |
+            dist/EthernetLinkTester-Windows11-x64.exe
+            dist/EthernetLinkTester-Portable-Windows11-x64.zip
+            dist/EthernetLinkTester-Setup-Windows11-x64.exe
+          if-no-files-found: error
