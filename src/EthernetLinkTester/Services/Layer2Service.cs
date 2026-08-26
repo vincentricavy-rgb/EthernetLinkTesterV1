@@ -1,9 +1,9 @@
 using SharpPcap; using EthernetLinkTester.Models;
 namespace EthernetLinkTester.Services;
 public sealed class Layer2Service : IDisposable {
- ICaptureDevice? reflector; Action<string>? reflLog;
+ ILiveDevice? reflector; Action<string>? reflLog;
  public IReadOnlyList<string> Adapters(){try{return CaptureDeviceList.Instance.Select(d=>d.Name+" | "+d.Description).ToList();}catch{return Array.Empty<string>();}}
- static ICaptureDevice Find(string token){var d=CaptureDeviceList.Instance.FirstOrDefault(x=>x.Name==token|| (x.Name+" | "+x.Description)==token);return d??throw new InvalidOperationException("Interface Npcap introuvable. Installez Npcap et relancez l'application.");}
+ static ILiveDevice Find(string token){var d=CaptureDeviceList.Instance.FirstOrDefault(x=>x.Name==token|| (x.Name+" | "+x.Description)==token);return d??throw new InvalidOperationException("Interface Npcap introuvable. Installez Npcap et relancez l'application.");}
  public void StartReflector(string adapter,Action<string> log){StopReflector();reflector=Find(adapter);reflLog=log;reflector.OnPacketArrival+=Reflect;reflector.Open(DeviceModes.Promiscuous,500);reflector.StartCapture();log("Réflecteur Ethernet L2/VLAN actif via Npcap.");}
  void Reflect(object sender,PacketCapture e){try{var raw=e.GetPacket().Data;if(raw.Length<28)return;int off=(raw[12]==0x88&&raw[13]==0xA8&&raw.Length>22&&raw[16]==0x81&&raw[17]==0x00)?22:((raw[12]==0x81&&raw[13]==0x00)?18:14);if(raw.Length<off+8)return;if(raw[off]!=0x45||raw[off+1]!=0x4C||raw[off+2]!=0x54||raw[off+3]!=0x32)return;var reply=(byte[])raw.Clone();for(int i=0;i<6;i++){(reply[i],reply[i+6])=(reply[i+6],reply[i]);}reply[off+4]=2;reflector?.SendPacket(reply);}catch(Exception ex){reflLog?.Invoke("L2 reflector: "+ex.Message);} }
  public void StopReflector(){try{if(reflector!=null){reflector.StopCapture();reflector.OnPacketArrival-=Reflect;}}catch{}reflector=null;}
